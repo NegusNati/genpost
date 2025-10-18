@@ -130,10 +130,18 @@ Tasks
   - [ ] Strict TypeScript across repo (`noImplicitAny`, `exactOptionalPropertyTypes`).
   - [ ] `packages/tsconfig` with `base.json` + app-specific extends; path aliases.
   - [ ] ESLint (flat config) + Prettier; import/order rules; no default exports.
+  - [ ] Configure `tsconfig.base.json` with incremental builds, `paths`, and DOM/node lib separation per app.
+  - [ ] Set up `tsc --build` project references (root `tsconfig.json`) to support incremental compilation.
+  - [ ] ESLint flat config extends internal presets (typescript, react, security); enable `eslint-plugin-security`, `eslint-plugin-promise`, `eslint-plugin-import`.
+  - [ ] Integrate Prettier via `eslint-config-prettier`; add formatting script `pnpm -w format`.
+  - [ ] Add `types/` directory for global ambient types (e.g., PWA service worker) referenced via `typeRoots`.
 - [ ] Environment management
   - [ ] `packages/env` with Zod-validated schemas for server and client.
   - [ ] Separate `.env.example` for root, `apps/api`, `apps/web`.
   - [ ] Add Gemini-related env vars (`GOOGLE_GENAI_API_KEY`, default model, safety settings) consumed by SDK.
+  - [ ] Enforce runtime validation: throw on missing/invalid env in bootstrap; provide `validateEnv()` helper per app.
+  - [ ] Document secret storage process (1Password/Vault) and `.envrc` template for direnv (optional).
+  - [ ] Add `.env.test` schema ensuring deterministic values for integration tests (no real API keys).
  - [ ] CI/CD (GitHub Actions)
   - [ ] Concurrency: cancel in-progress runs per branch/PR (`ci-${{ github.ref }}`).
   - [ ] Setup: Node 20.x, pnpm, `actions/cache` for pnpm store and Turbo cache keyed by lockfile + OS.
@@ -141,10 +149,16 @@ Tasks
   - [ ] Selective execution: Turbo affected-only on PRs; full on `main`.
   - [ ] Artifacts: upload coverage (lcov), build outputs, and test results; annotate ESLint/TS.
   - [ ] Security: least-privilege permissions; pinned action SHAs/versions; Dependabot for npm and Actions.
+  - [ ] Workflows: `ci.yml` (PR), `main.yml` (push), `nightly.yml` (cron); reuse job matrix with shared setup composite action.
+  - [ ] Secrets management: document required GitHub secrets (`POSTGRES_URL`, `SENTRY_DSN`, `CHAPA_KEY`, `GOOGLE_GENAI_API_KEY` placeholder) and ensure encrypted env usage.
+  - [ ] Add status badges (CI, coverage) once pipelines green; configure branch protection to require CI.
 - [ ] Documentation
   - [ ] `README.md` (root) explaining workspace, commands, contribution.
   - [ ] ADRs in `docs/adr/` for major architecture choices (monorepo, auth, ORM, payments).
   - [ ] ADR: Adopt `@google/genai` as the unified AI provider layer (retries, observability, safety policies).
+  - [ ] Onboarding guide: include prerequisite installs, repo bootstrap steps, `docker-compose` services list.
+  - [ ] CONTRIBUTING.md with coding standards, commit message style, review checklist.
+  - [ ] Diagram README section linking to architecture overview and runbooks.
 
 
 ## Phase 0.5 — Critical Infrastructure (NEW)
