@@ -31,7 +31,7 @@ References: prd.md:1, prd.md:35, prd.md:113
 - **Observability**: OpenTelemetry + Jaeger (traces) + Prometheus (metrics) + Grafana (dashboards) + Sentry (errors)
 - **Auth**: Better Auth (email/password + Google OAuth)
 - **Payments**: Chapa (ETB currency, monthly subscriptions + add-ons)
-- **AI**: Google Gemini (image generation + alt text)
+- **AI**: Google Gemini via `@google/genai` SDK (image generation + alt text)
 - **Storage**: Local disk (self-hosted) with nginx reverse proxy
 - **Infrastructure**: Docker Compose + nginx-proxy-manager (Let's Encrypt TLS)
 - **Monorepo**: pnpm workspaces + Turborepo (build caching)
@@ -101,6 +101,7 @@ References: prd.md:1, prd.md:35, prd.md:113
 6. **Connection Pooling**: pgBouncer prevents DB connection exhaustion under high load
 7. **Distributed Tracing**: End-to-end request tracking for debugging and performance optimization
 8. **Progressive Enhancement**: PWA works offline with queued operations synced when online
+9. **Provider Interface**: All Gemini interactions flow through the shared `@google/genai` client to centralize retries, safety controls, and telemetry
 
 
 ## Phase 0 — Foundations & Monorepo Setup
@@ -114,10 +115,17 @@ Tasks
   - [ ] Enable `corepack` and pin Node `>=20.x`, pnpm `>=9.x`.
   - [ ] Initialize Turborepo (`turbo.json`) with pipelines: `lint`, `typecheck`, `build`, `test`, `e2e`.
   - [ ] Configure `pnpm-workspace.yaml` for `apps/*` and `packages/*`.
+  - [ ] Add `@google/genai` to workspace deps; create smoke script (mocked provider) verifying SDK wiring.
+  - [ ] Bootstrap root `package.json` with workspace scripts (`pnpm -w lint|typecheck|test|build|e2e`).
+  - [ ] Configure `.npmrc`/`.pnpmfile.cjs` to enforce pnpm version and frozen lockfile in CI.
+  - [ ] Verify toolchain by running `pnpm -w exec node -v`, `pnpm -w dlx turbo run lint --dry` after initialization.
 - [ ] Repo hygiene
   - [ ] Add `.editorconfig`, `.gitignore`, `LICENSE` (if applicable), `CODEOWNERS`.
   - [ ] Conventional commits (`@commitlint/config-conventional`) and `changesets` for versioning.
   - [ ] Pre-commit hooks via `husky` + `lint-staged` (run `eslint --fix`, `prettier --check`, `typecheck`).
+  - [ ] Automate Husky install via `prepare` script; ensure `lint-staged` config covers TS/JSON/MD.
+  - [ ] Add `renovate.json` or Dependabot config for dependency updates (npm + GitHub Actions).
+  - [ ] Verify hooks by crafting dummy commit to confirm lint-staged + commitlint enforcement.
 - [ ] TypeScript & linting
   - [ ] Strict TypeScript across repo (`noImplicitAny`, `exactOptionalPropertyTypes`).
   - [ ] `packages/tsconfig` with `base.json` + app-specific extends; path aliases.
@@ -125,6 +133,7 @@ Tasks
 - [ ] Environment management
   - [ ] `packages/env` with Zod-validated schemas for server and client.
   - [ ] Separate `.env.example` for root, `apps/api`, `apps/web`.
+  - [ ] Add Gemini-related env vars (`GOOGLE_GENAI_API_KEY`, default model, safety settings) consumed by SDK.
  - [ ] CI/CD (GitHub Actions)
   - [ ] Concurrency: cancel in-progress runs per branch/PR (`ci-${{ github.ref }}`).
   - [ ] Setup: Node 20.x, pnpm, `actions/cache` for pnpm store and Turbo cache keyed by lockfile + OS.
@@ -135,6 +144,7 @@ Tasks
 - [ ] Documentation
   - [ ] `README.md` (root) explaining workspace, commands, contribution.
   - [ ] ADRs in `docs/adr/` for major architecture choices (monorepo, auth, ORM, payments).
+  - [ ] ADR: Adopt `@google/genai` as the unified AI provider layer (retries, observability, safety policies).
 
 
 ## Phase 0.5 — Critical Infrastructure (NEW)
@@ -203,6 +213,7 @@ Monorepo layout (proposed)
   - shared/ — shared types (DTOs), utilities, API client
   - og/ — shared utilities for dynamic OG image composition (Satori + Resvg)
   - docs/ — invoice/receipt HTML templates, email templates, branding assets
+  - ai/ — `@google/genai` client config, model presets, retry/safety policies (NEW)
   - cache/ — Redis client, caching decorators, multi-tier strategies (NEW)
   - queue/ — BullMQ queue definitions, job processors, retry policies (NEW)
   - observability/ — OpenTelemetry setup, custom metrics, tracing (NEW)
@@ -227,6 +238,11 @@ Tasks
   - [ ] DTOs: `AuthDTO`, `CreditDTO`, `GenerationDTO`, `SubscriptionDTO`, `MediaDTO`, `PaymentDTO` (provider: `chapa`).
 - [ ] `packages/config`
   - [ ] `eslint.config.mjs`, `tsconfig` presets, `tailwind.config.ts` extendable presets.
+- [ ] `packages/ai` (NEW)
+  - [ ] Install and wrap `@google/genai` with centralized configuration (API key, model ids, safety settings).
+  - [ ] Expose typed clients for image and text generation with shared retry/backoff policies.
+  - [ ] Emit OpenTelemetry spans/metrics and structured logging hooks around SDK calls.
+  - [ ] Provide test utilities/mock adapters for offline development and CI.
 - [ ] `packages/cache` (NEW)
   - [ ] Redis client factory with connection pooling and reconnection logic.
   - [ ] Cache decorators: `@Cacheable(key, ttl)`, `@CacheEvict(key)`, `@CacheUpdate(key)`.
@@ -352,6 +368,7 @@ Tasks
 - [ ] Generation module (stub)
   - [ ] `POST /generate` validates prompt, style; enqueue job; returns request id.
   - [ ] `GET /generate/:id` returns status and image URL when complete.
+  - [ ] Use `packages/ai` `@google/genai` client for all Gemini calls; ensure circuit breaker wraps SDK invocations.
 - [ ] Media module
   - [ ] Local disk storage with safe path join; MIME + size checks; virus scan hook (optional).
   - [ ] Static image server with range requests and caching headers (via reverse proxy).
@@ -560,7 +577,7 @@ Definition of Done
 Tasks
 - [ ] Presets: Vintage, Celebration, Cartoonish, Cinematic, Meme & Trendy, Dreamy, Renaissance Art.
 - [ ] Backend: Google Gemini image generation provider behind interface; API key in env; safety settings and rate limits.
-  - [ ] Provider: Google AI Studio REST; env `GOOGLE_API_KEY`, `GEMINI_IMAGE_MODEL`; request timeouts/retries and exponential backoff.
+  - [ ] Provider: `@google/genai` SDK; env `GOOGLE_GENAI_API_KEY`, `GEMINI_IMAGE_MODEL`; request timeouts/retries and exponential backoff.
   - [ ] Request lifecycle
   - [ ] Validate credits > 0; reserve credit; on success finalize; on failure release.
   - [ ] Persist request + result; store image URL and metadata.
@@ -636,6 +653,7 @@ Tasks
 - [ ] Observability
   - [ ] Pino logs with request ids; log redaction of PII.
   - [ ] Prometheus metrics (requests, latency, generation success rate); uptime alerts.
+  - [ ] Instrument `@google/genai` client usages (latency, model, quota) via OpenTelemetry and export to Prometheus/Grafana dashboards.
 - [ ] Security
   - [ ] CSP headers, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`.
   - [ ] Input validation everywhere (Zod); output encoding; file scanning.
