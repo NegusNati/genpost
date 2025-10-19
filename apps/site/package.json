@@ -1,0 +1,12 @@
+{
+  "name": "@genimage/site",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "echo \"todo lint site\"",
+    "typecheck": "tsc --noEmit",
+    "build": "echo \"todo build site\"",
+    "test": "echo \"todo test site\""
+  }
+}

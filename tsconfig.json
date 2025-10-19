@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "files": [],
+  "references": [
+    { "path": "apps/web" },
+    { "path": "apps/api" },
+    { "path": "apps/site" },
+    { "path": "packages/ui" },
+    { "path": "packages/db" },
+    { "path": "packages/env" },
+    { "path": "packages/config" },
+    { "path": "packages/auth" },
+    { "path": "packages/i18n" },
+    { "path": "packages/shared" },
+    { "path": "packages/og" },
+    { "path": "packages/docs" },
+    { "path": "packages/ai" },
+    { "path": "packages/cache" },
+    { "path": "packages/queue" },
+    { "path": "packages/observability" },
+    { "path": "packages/resilience" }
+  ]
+}

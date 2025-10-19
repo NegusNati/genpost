@@ -1,0 +1,12 @@
+{
+  "name": "@genimage/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "echo \"todo lint api\"",
+    "typecheck": "tsc --noEmit",
+    "build": "echo \"todo build api\"",
+    "test": "echo \"todo test api\""
+  }
+}
